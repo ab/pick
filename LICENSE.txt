@@ -1,4 +1,4 @@
-Copyright (c) 2013 Andy Brody
+Copyright (c) 2017 Andy Brody
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
