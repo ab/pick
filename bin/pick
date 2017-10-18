@@ -3,8 +3,95 @@
 require 'bundler/setup'
 require 'pick'
 
+require 'optparse'
+
+# known escapes for delimiter
+ESCAPES = {
+  '\0' => "\0",
+  '\a' => "\a",
+  '\b' => "\b",
+  '\e' => "\e",
+  '\f' => "\f",
+  '\n' => "\n",
+  '\r' => "\r",
+  '\s' => "\s",
+  '\t' => "\t",
+  '\v' => "\v",
+}.freeze
+
 def main(args)
-  raise NotImplementedError.new('TODO')
+  args = args.dup
+
+  options = {}
+
+  optparse = OptionParser.new do |opts|
+    opts.banner = <<-EOM
+usage: #{File.basename($0)} [OPTION]... [FILE]
+
+Interactively pick lines from stdin or FILE. This is useful in building
+CLI pipelines for humans to select among several options.
+
+By default, input and output items are terminated by a trailing newline (\\n).
+Pass -0/--null to use a null character, compatible with \`find -print0\` or
+\`xargs -0\`.
+
+Options:
+    EOM
+
+    opts.on('-h', '--help', 'Display this message') do
+      STDERR.puts opts, ''
+      exit 0
+    end
+    opts.on('-v', '--version', 'Print version number', ' ') do
+      puts 'pick ' + Pick::VERSION
+      exit 0
+    end
+
+    opts.on('-m', '--multiple', 'Select multiple items from input') do
+      options[:multiple] = true
+    end
+
+    opts.on('-d', '--delimiter DELIM',
+            'Split input on delimiter (default \n)') do |arg|
+      if ESCAPES.include?(arg)
+        arg = ESCAPES.fetch(arg)
+      end
+      options[:input_delimiter] = arg
+    end
+
+    opts.on('-0', '--null', 'Delimit input and output items by \0') do
+      options[:input_delimiter] = "\0"
+      options[:output_delimiter] = "\0"
+    end
+
+    opts.on('-c', '--clipboard', 'Copy output to the clipboard') do
+      options[:clipboard] = true
+      raise NotImplementedError.new
+    end
+
+    opts.on('--tty DEV', 'Set DEV as TTY device instead of /dev/tty') do |arg|
+      options[:tty_dev] = arg
+    end
+  end
+
+  optparse.parse!(args)
+
+  case args.length
+  when 0
+    file = STDIN
+  when 1
+    file = File.open(args.fetch(0), 'r')
+  else
+    puts optparse
+    exit 1
+  end
+
+  begin
+    Pick::CLI.run(file, options)
+  rescue TTY::Reader::InputInterrupt
+    STDERR.puts
+    exit 130
+  end
 end
 
 if $0 == __FILE__
