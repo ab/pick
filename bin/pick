@@ -64,6 +64,10 @@ Options:
       options[:output_delimiter] = "\0"
     end
 
+    opts.on('-p', '--prompt MSG', 'Prompt with message MSG') do |arg|
+      options[:prompt] = arg
+    end
+
     opts.on('-c', '--clipboard', 'Copy output to the clipboard') do
       options[:clipboard] = true
       raise NotImplementedError.new
